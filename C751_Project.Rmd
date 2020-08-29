@@ -1,0 +1,216 @@
+---
+title: "EDA Project - Randy Crane"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
+```
+
+## Introduction
+
+I have had this data set for about 2 years, and I'm looking forward to finally being able to explore it in this project now that I have these tools. The data set was created by TouringPlans.com specifically to give programmers and statisticians who may be interested in working with them someday some actual data they have compiled to practice on.
+
+A total of four data sets were provided, each consisting of wait time data for one of the four Walt Disney World theme parks (Magic Kingdom, Epcot, Hollywood Studios, and Animal Kingdom) for a particular time period. I have chosen to use the Magic Kingdom ("MK") data set for this project.
+
+To keep the project scope from getting away from me, before importing the set into R, I did some cleaning on it--specifically, I narrowed the date range down to the most recent two complete years for which data was provided (2015 and 2016) and removed some columns that were included but had no data.
+
+For each data, the average weight time in minutes ("SPOSTMIN") of all the attractions in the park was calculated several times a day. Each of these observations is recorded. The purpose of this project is to perform an exploratory data analysis on these wait times to look for possible patterns and to see what factors (e.g. number of hours the park is open, number of hours other parks are open, mean minimum temperature for the day, season, etc.) have a noticeable impact on those wait times. 
+
+There are some quirks and limitations to the data set that I wish did not exist. The two primary ones are that, for some reason, Epcot's park hours were not included, and instead of the mean temperature for each day, the mean <i>minimum</i> temperature for each day was provided. I think the mean temperature would be more useful, but the mean minimum is better than nothing.  
+
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+Now, let's load the data set & packages and get a look at the structure.
+
+```{r Loading data set}
+getwd()
+setwd("D:\\Documents\\School - WGU\\Term 4\\C751\\Project")
+
+mk <- read.csv("MK04.csv")
+
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(memisc)
+library(gridExtra)
+library(RColorBrewer)
+library(scales)
+library(tidyr)
+
+str(mk)
+```
+
+<p>&nbsp;</p>
+## Analysis and Exploration
+
+This data set consists of 73,222 observations of 24 variables, for a total of 1,757,328 data points.
+
+Not all of these variables are relevant to a summary, so here is the summary with only those that are. These may or may not all end up being useful later in the analysis. 
+
+```{r summary of relevant numeric columns}
+cols <- c("SPOSTMIN", "WGT", "MKHOURS", "HSHOURS", "AKHOURS", "IAHOURS", "UFHOURS", "WDWMINTEMP_MEAN");
+summary(mk[cols])
+```
+
+It's time to start looking at some visualizations of the data. We'll begin with a simple histogram showing the distribution of wait times.
+```{r Visualization #1 - Distribution of wait times histogram}
+ggplot(aes(x = SPOSTMIN), data = mk) +
+  geom_histogram(binwidth = 5)
+```
+
+This is somewhat surprising. Considering what I thought I knew of theme park wait times, and considering the summary shown above, I would have expected a more normal distribution centered around 36 minutes. Instead, we have a positively skewed distribution with the vast majority being in the 5-minute range. There are definitely some outliers, too, and I'm sure we'll see those again. Given what I have personally experienced in theme park wait times, those outliers are legitimate data,so generally I will keep them included.
+
+Now, we'll get a snapshot of many of the data pairs.
+
+```{r Visualization #2 - Matrix of Plots}
+cols <- c("SPOSTMIN","WDW_TICKET_SEASON" , "DAYOFWEEK", "WEEKOFYEAR", "SEASON", "HOLIDAYPX", "HOLIDAYM", "INSESSION", "MKHOURS", "HSHOURS", "AKHOURS", "IAHOURS", "UFHOURS", "WDWMINTEMP_MEAN", "CAPACITYLOST_MK");
+
+ggpairs(mk[cols], 
+        lower = list(continuous = wrap("points", shape = I('.'))), 
+        upper = list(combo = wrap("box", outlier.shape = I('.'))),
+        cardinality_threshold = 20)
+```
+
+This is a good quick snapshot of many of the possible data pairs. Looking at the correlation coefficients, some non-correlations are obvious and expected (Magic Kingdom park hours and the mean minimum temperature for a particular day are completely independent of one another, and so the correlation coefficient of -0.009 is expected.) 
+
+However, there are also some stronger correlations. Since wait times are the primary variable of interest, as I look at this visualization, I see a moderately strong correlation between wait times and these other variables:
+
+<ul>
+<li>Holiday Metric (HOLIDAYM) ... 0.311</li>
+<li>Percentage of Schools in Session (INSESSION) ... -0.305</li>
+<li>Total Open Hours for Magic Kingdom (MKOPEN) ... 0.302</li>
+</ul>
+
+Surprisingly, the two strongest correlations are between wait times and Universal Studios' Islands of Adventure total open hours (0.341) and between wait times and Universal Studios total open hours (0.320).
+
+Let's take a closer look at some individual plots to see what we can learn, starting with a box plot of wait times by WDW_TICKET_SEASON. 
+
+```{r Visualization #3 - Box Plot of wait times by WDW_TICKET_SEASON}
+ggplot(aes(x = WDW_TICKET_SEASON, y = SPOSTMIN), data = mk) +
+  geom_boxplot()
+```
+
+There are a couple of things I notice right away about these box plots. First, as expected, the mean wait times are longest during peak season and decrease from there. Somewhat surprisingly, peak season has a lot of outliers, but considering that "peak season" dates include Spring Breaks, Summer, Christmas, and other holidays, I expect a lot of variability in that one. The outliers in regular season may warrant more scrutiny. We may be able to see this with a scatterplot of wait times vs. month of the year.
+
+```{r Visualization #4 - Scatterplot of wait times vs. month of the year, with jitter.}
+ggplot(aes(x=(MONTHOFYEAR),y=SPOSTMIN, color = WDW_TICKET_SEASON), data=mk) +
+  geom_jitter(alpha = 1/4) +
+  scale_x_continuous(breaks = seq(1, 12, 1))
+```
+
+Sure enough, the season varies from month to month for much of the year. Only June and October are each consistently one season (peak and regular, respectively). Also, there are relatively few outliers--though the ones at the bottom of the plot are confusing and need more scrutiny, just perhaps not in this project.
+
+```{r Visualization #5 - }
+#wait times by day of week (same as above, but dayofweek rather than month of year.)
+
+```
+
+Explanation & observations of Viz 5.
+```{r Visualization #6 - }
+# histogram of wait times, subset by season, and displayed either next to or above each other.
+
+```
+
+Explanation & observations of Viz 6.
+```{r Visualization #7 - }
+# compare wait times to mean min temp
+
+```
+
+Explanation & observations of Viz 7.
+```{r Visualization #8 - }
+#
+
+```
+
+Explanation & observations of Viz 8.
+```{r Visualization #9 - }
+
+
+```
+
+Explanation & observations of Viz 9.
+```{r Visualization #10 - }
+
+
+```
+
+Explanation & observations of Viz 10.
+```{r Visualization #11 - }
+
+
+```
+
+Explanation & observations of Viz 11.
+```{r Visualization #12 - }
+
+
+```
+
+Explanation & observations of Viz 12.
+```{r Visualization #13 - }
+
+
+```
+
+Explanation & observations of Viz 13.
+```{r Visualization #14 - }
+
+
+```
+
+Explanation & observations of Viz 14.
+```{r Visualization #15 - }
+
+
+```
+
+Explanation & observations of Viz 15.
+```{r Visualization #16 - }
+
+
+```
+
+Explanation & observations of Viz 16.
+```{r Visualization #17 - }
+
+
+```
+
+Explanation & observations of Viz 17.
+```{r Visualization #18 - }
+
+
+```
+
+Explanation & observations of Viz 18.
+```{r Visualization #19 - }
+
+
+```
+
+Explanation & observations of Viz 19.
+```{r Visualization #20 - }
+
+
+```
+
+Explanation & observations of Viz 20.
+
+<p>&nbsp;</p>
+## Final Plots and Summary
+
+```{r Final Plots}
+
+
+```
+
+Build an algorithm with the most likely predictors of wait time.
+
+<p>&nbsp;</p>
+## Reflection
+
+
+
