@@ -288,13 +288,12 @@ ggplot(aes(x= NEWNESS, y = wait_time_mean), data = mk.newness_by_groups) +
                               "Minor w/in 30 days", 
                               "Minor w/in 6 months", 
                               "Minor w/in 7 days"))
-  
-
+```  
+```{r alternate_attempt}
 ggplot(aes(x= NEWNESS, y = SPOSTMIN), data = mk) +
   geom_point(alpha = 1/5, position = position_jitter(h = 0)) +
   geom_line(stat = "summary", fun = "mean", color = "red") +
   geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), color = "blue")
-
 ```
 
 This plot shows the same general trend for both the mean (yellow) and median (red)--the longest  wait times are for attractions having a minor refurbishment within 6 months. The only reason I can think of for this is that the attractions with minor refurbishments within 6 months are also the "headliners" and/or guest favorites and so they naturally generate higher wait times. Without a list of what attractions are in each category, though, I can't say this for certain.  
