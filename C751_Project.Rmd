@@ -56,17 +56,26 @@ summary(mk[cols])
 ```
 
 It's time to start looking at some visualizations of the data. We'll begin with a simple histogram showing the distribution of wait times.
-```{r Visualization1_Distribution_of_wait_times_histogram}
+```{r Visualization1a_Distribution_of_wait_times_histogram}
 ggplot(aes(x = SPOSTMIN), data = mk) +
   geom_histogram(binwidth = 5)
 ```
 
-This is somewhat surprising. Considering what I thought I knew of theme park wait times, and considering the summary shown above, I would have expected a more normal distribution centered around 36 minutes. Instead, we have a positively skewed distribution with the vast majority being in the 5-minute range. There are definitely some outliers, too, and I'm sure we'll see those again. Given what I have personally experienced in theme park wait times, those outliers are legitimate data,so generally I will keep them included.
+This is somewhat surprising. Considering what I thought I knew of theme park wait times, and considering the summary shown above, I would have expected a more normal distribution with most wait times centered around 36 minutes. Instead, we have a positively skewed distribution with the vast majority being in the 5-minute range. There are definitely some outliers, too, and I'm sure we'll see those again. Given what I have personally experienced in theme park wait times, those outliers are legitimate data, so generally I will keep them included.
+
+```{r Visualization1b_Distribution_of_wait_times_histogram}
+ggplot(aes(x = SPOSTMIN), data = mk) +
+  geom_histogram(binwidth = 5) +
+  scale_y_log10() +
+  coord_cartesian(xlim = c(0, 90))
+```
+
+Scaling the y-axis to a log(10) scale and limiting the x-axis to 0 - 90, we can see 5 minutes it still the most prominent wait time recorded, but we still don't have a normal distribution. Instead, it remains positively skewed. Interesting.
 
 Now, we'll get a snapshot of many of the data pairs.
 
 ```{r Visualization2_Matrix_of_Plots}
-cols <- c("SPOSTMIN","WDW_TICKET_SEASON" , "DAYOFWEEK", "WEEKOFYEAR", "SEASON", "HOLIDAYPX", "HOLIDAYM", "INSESSION", "MKHOURS", "HSHOURS", "AKHOURS", "IAHOURS", "UFHOURS", "WDWMINTEMP_MEAN", "CAPACITYLOST_MK");
+cols <- c("SPOSTMIN","WDW_TICKET_SEASON" , "DAYOFWEEK", "WEEKOFYEAR", "SEASON", "HOLIDAYM", "INSESSION", "MKHOURS", "HSHOURS", "AKHOURS", "IAHOURS", "UFHOURS", "WDWMINTEMP_MEAN");
 
 ggpairs(mk[cols], 
         lower = list(continuous = wrap("points", shape = I('.'))), 
@@ -111,13 +120,13 @@ ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, color = WDW_TICKET_SEASON), data=mk) +
   scale_x_continuous(breaks = seq(1, 7, 1), labels=c("1" = "Sunday", "2" = "Monday", "3" = "Tuesday", "4" = "Wednesday", "5" = "Thursday", "6" = "Friday", "7" = "Saturday"))
 ```
 
-This time, we are looking at the wait times by day of the week, again color-coded by ticket season.These findings definitely surprise me. I would expect both weekend days days to be the busiest, but Sunday is noticeably lower than the other days. Let's take a look at the summary for each day to find out more.
+This time, we are looking at the wait times by day of the week, again color-coded by ticket season. These findings definitely surprise me. I would expect both weekend days to be the busiest, but Sunday is noticeably lower than the other days. Let's take a look at the summary for each day to find out more.
 
 ```{r summary_for_days_of_week}
 by(mk$SPOSTMIN, mk$DAYOFWEEK, summary)
 ```
 
-We can see from this table that Sunday is, in fact,  the lowest (or tied for the lowest) at every quantile level, and the mean is the lowest. It can be hard to really see how all 7 days compare on a table like this, though. Let's visualize it as a box plot.
+We can see from this table that Sunday is, in fact, the lowest (or tied for the lowest) at every quantile level, and the mean is the lowest. It can be hard to really see how all 7 days compare on a table like this, though. Let's visualize it as a box plot.
 
 ```{r Visualization6_}
 ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, group = DAYOFWEEK), data = mk) +
@@ -125,7 +134,7 @@ ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, group = DAYOFWEEK), data = mk) +
   stat_summary(fun = mean, geom = "point", shape = 4)
 ```
 
-Sure enough, Sunday's median and mean are lower, as are the quartiles. If we remove the outliers, this becomes even more obvious.
+Sure enough, Sunday's median and mean are lower, as are the quantiles. If we remove the outliers, this becomes even more obvious.
 
 ```{r Visualization7_}
 ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, group = DAYOFWEEK), data = mk) +
@@ -134,7 +143,7 @@ ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, group = DAYOFWEEK), data = mk) +
   ylim(0, quantile(mk$SPOSTMIN, 0.95))
 ```
 
-Sunday's median  is lower than 3 days, and the same as the other 3. The quartiles for Sunday are definitely smaller. And the mean is lower than all the other days. Why would this be? Wouldn't weekend days be highest?
+Sunday's median  is lower than 3 days, and the same as the other 3. The quantiles for Sunday are definitely smaller. And the mean is lower than all the other days. Why would this be? Wouldn't weekend days be highest?
 
 Not necessarily. WDW is a destination vacation, not generally a locals' park (like Disneyland is). Because it is a destination, people are more likely to arrive on the weekend. In my experience, guests often like to finish up their packing and preparations on Saturday, then travel Sunday and stay 7 nights. These stays are Sunday - Sunday.
 
@@ -169,11 +178,13 @@ grid.arrange(p1, p2, p3, ncol = 1)
 
 There is definitely more variation between seasons. 
 
-```{r_summary_of_DAYOFWEEK_by_WDW_TICKET_SEASON}
+```{r summary_of_DAYOFWEEK_by_WDW_TICKET_SEASON_variables}
 season_peak <- subset(mk, WDW_TICKET_SEASON == "peak")
 season_regular <- subset(mk, WDW_TICKET_SEASON == "regular")
 season_value <- subset(mk, WDW_TICKET_SEASON == "value")
+```
 
+```{r summary_by_seasons}
 by(season_peak$SPOSTMIN, season_peak$DAYOFWEEK, summary)
 by(season_regular$SPOSTMIN, season_regular$DAYOFWEEK, summary)
 by(season_value$SPOSTMIN, season_value$DAYOFWEEK, summary)
@@ -218,7 +229,7 @@ This is unexpected. Here we have a visualization of wait times vs. the "HOLIDAYM
 
 What is surprising to me is the lack of any predictable pattern. I would have expected the wait times to either increase more-or-less consistently from 0 - 5 or to decrease in that same way, but it does neither. 0 is the lowest and 5 is the highest, but in between comes 2, 1, 4, and 3, in that order. I really have no idea why this is.
 
-Considering the fact that the data pairs matrix showed a correlation coefficient of 0.311, I'm even more surprised to see apparent unpredictablity, as HOLIDAYM should be a moderately strong predictor of wait times. Unfortunately, I don't think I have enough data to explain this in more detail. We may return to it later, though.
+Considering the fact that the data pairs matrix showed a correlation coefficient of 0.311, I'm even more surprised to see apparent unpredictability, as HOLIDAYM should be a moderately strong predictor of wait times. Unfortunately, I don't think I have enough data to explain this in more detail. We may return to it later, though.
 
 ```{r Visualization12_INSESSION}
 ggplot(aes(x = INSESSION, y = SPOSTMIN), data = mk) +
@@ -227,7 +238,7 @@ ggplot(aes(x = INSESSION, y = SPOSTMIN), data = mk) +
 #lm, glm, gam, loess
 ```
 
-Interesting and again not as expected. One would assume that the more schools are not in session (an INSESSION number closer to 0), the higher the average wait time. But that doesn't appear to be the case here. HOwever, there is so much data, there is a great deal of overplotting, so let's see what we can do with that.
+Interesting and again not as expected. One would assume that the more schools are not in session (an INSESSION number closer to 0), the higher the average wait time. But that doesn't appear to be the case here. However, there is so much data, there is a great deal of overplotting, so let's see what we can do with that.
 
 ```{r Visualization13_INSESSION_reducing_overplotting}
 ggplot(aes(x = INSESSION, y = SPOSTMIN), data = mk) +
@@ -243,7 +254,7 @@ That's better. I had really expected a stronger relationship here, given the rel
 
 From what I see here, it seems that during peak season, the mean wait times are within a fairly narrow range (40-50 minutes) until we get to about 65% of schools in session. This seems to show that during the peak season, while most schools are not in session, the percentage of schools in session doesn't have much of an impact. Then we see a bump--which may be related to </i>which</i> schools are still not in session and may indicate a desire of those families to get in a trip when most kids are back in school. Then, predictably, it drops off dramatically.
 
-During the regular season, the impact of schools being in session is more clear, and more what I would expect. For value season, there are so few data points of schools not being in session that the graph is inconclusive. 
+During the regular season, the impact of schools being in session is clearer, and more what I would expect. For value season, there are so few data points of schools not being in session that the graph is inconclusive. 
 
 ```{r Visualization14_INSESSION_reducing_overplotting_with_and_without_seasons}
 p1 <- ggplot(aes(x = INSESSION, y = SPOSTMIN), data = mk) +
@@ -266,7 +277,7 @@ grid.arrange(p1, p2, ncol = 1)
 
 If we stack these on top of each other, we can see that the combined chart very closely mirrors the peak season chart. 
 
-So far we've been looking at the park as a whole. What if we explore wait times subset by NEWNESS? Do attractions that have had major refurbishments recently have longer median or mean wait times?
+So far, we've been looking at the park as a whole. What if we explore wait times subset by NEWNESS? Do attractions that have had major refurbishments recently have longer median or mean wait times?
 
 ```{r Visualization15_by_newness}
 ggplot(aes(x= NEWNESS, y = SPOSTMIN), data = mk) +
@@ -307,7 +318,7 @@ longest_hours <- mk[which.max(mk$MKHOURS),]
 longest_hours$DATE
 ```
 
-May 22, 2015. That makes sense. That was the date of <a href="https://touringplans.com/walt-disney-world/events/24-hour-celebration", target="_blank">a 24-hour celebration</a>. Let's run that same visualization again, but exclude that date.
+May 22, 2015. That makes sense. That was the date of <a href="https://touringplans.com/walt-disney-world/events/24-hour-celebration" target="_blank">a 24-hour celebration</a>. Let's run that same visualization again, but exclude that date.
 
 ```{r Visualization17_Compare_to_total_opening_hours_for_each_park}
 #Remove the outlier day from the data set.
@@ -321,7 +332,7 @@ ggplot(aes(x = MKHOURS, y = SPOSTMIN, color = WDW_TICKET_SEASON), data = mk_no_2
   scale_x_continuous(breaks = seq(8, 18, 1))
 ```
 
-There aren't very many observations for the 8 and 9 hour days, but that makes sense. Disney wants to keep their parks open as long as possible. Surprisingly, the ones that are there are mostly regular and peak days.The two main reasons I can think of for this are that some of those days are likely during months with less daytime hours so they may close earlier, and/or days with special events in the evening (primarily Mickey's Halloween Treat and Mickey's Very Merry Christmas Party). We could determine that more conclusively by plotting park hours vs. time of year (maybe by SEASON), and park hours vs. SUNSET_WDW ... but we're not going to.
+There aren't very many observations for the 8- and 9-hour days, but that makes sense. Disney wants to keep their parks open as long as possible. Surprisingly, the ones that are there are mostly regular and peak days. The two main reasons I can think of for this are that some of those days are likely during months with less daytime hours so they may close earlier, and/or days with special events in the evening (primarily Mickey's Halloween Treat and Mickey's Very Merry Christmas Party). We could determine that more conclusively by plotting park hours vs. time of year (maybe by SEASON), and park hours vs. SUNSET_WDW ... but we're not going to.
 
 Once we get to 12 hours, we start to have a pretty solid upward trend. Hours generally get longer as crowds get heavier (not causation but correlation), so it makes sense to see this increase. The spike at 18 hours also makes sense as they are only open that long at the very busiest times of year.
 
@@ -362,7 +373,7 @@ grid.arrange(p1, p2, p3, p4, p5, ncol = 3)
 
 ```
 
-For some reason, the strongest relationship of all of these is between the Magic Kingdom wait times and <i>Universal's Islands of Adventure</i> hours. It is a vearly linear relationship. As Islands of Adventure's get longer, wait times at Magic Kingdom increase. I have no idea why that is. I know it's not causal--there is no reason either one would directly cause the other--but I don't know what it is. Digging into this could be an entire project by itself, but it's beyond the scope I've set for this one.
+For some reason, the strongest relationship of all of these is between the Magic Kingdom wait times and <i>Universal's Islands of Adventure</i> hours. It is a nearly linear relationship. As Islands of Adventure's get longer, wait times at Magic Kingdom increase. I have no idea why that is. I know it's not causal--there is no reason either one would directly cause the other--but I don't know what it is. Digging into this could be an entire project by itself, but it's beyond the scope I've set for this one.
 
 Moving on now. We've looked quite a bit at how various factors compare or relate to WDW_TICKET_SEASON (peak, regular, or value), but how does SEASON (e.g. Christmas, Halloween, Spring Break, etc.) compare.
 
@@ -399,7 +410,7 @@ ggplot(aes(x = time_of_day, y = SPOSTMIN), data = mk) +
 
 ```
 
-It looks like we have something very close to a normal distribution here. The bars show the maximum wait time for each time of day, while the lines show the mean, median, 10th percentile, and 95th percentile. We can see that even the early morning hours(park opening until 9 a.m.) <i>can</i> have long wait times, but they're still shorter than any other time of day. Let's get a closer look at the mean and median wait times to learn a bit more about how wait times are typically distributed, not this extreme.
+It looks like we have something very close to a normal distribution here. The bars show the maximum wait time for each time of day, while the lines show the mean, median, 10th percentile, and 95th percentile. We can see that even the early morning hours (park opening until 9 a.m.) <i>can</i> have long wait times, but they're still shorter than any other time of day. Let's get a closer look at the mean and median wait times to learn a bit more about how wait times are typically distributed, not this extreme.
 
 ```{r Visualization21_wait_times_mean_median_by_time_of_day}
 ggplot(aes(x = time_of_day, y = SPOSTMIN), data = mk) +
@@ -430,15 +441,83 @@ This is in order by time of day, from midnight to 11:59 p.m., and some of them (
 The lesson here is that if you're planning to visit the Magic Kingdom, get there <b><i>early</i></b>! Then, leave the park if you can for the late morning and lunch time. If you can stay up late enough and the park is open late enough, stay away until after dinner and come back for the rest of the night. (This will also serve you well as it avoids the hottest part of the day and the typical summer afternoon storms).
 
 
+
 <p>&nbsp;</p>
 ## Final Plots and Summary
 
-```{r Final Plots}
+<b>Final Plot 1 - </b>
 
-
+```{r Final_Plots_1}
+ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, color = WDW_TICKET_SEASON), data=mk) +
+  geom_jitter(alpha = 1/4) +
+  scale_x_continuous(breaks = seq(1, 7, 1), labels=c("1" = "Sunday", "2" = "Monday", "3" = "Tuesday", "4" = "Wednesday", "5" = "Thursday", "6" = "Friday", "7" = "Saturday")) +
+  labs(title = "Wait Times by Day of the Week",
+       x = "Day of the Week",
+       y = "Posted Wait Times (in Minutes)") +
+  scale_color_manual(name="WDW Ticket Season",
+                       labels=c("Peak","Regular","Value"),
+                       values=c("lightsalmon2","olivedrab3","blue3")) +
+  theme(plot.title = element_text(hjust = 0.5, size = 14))
 ```
 
+I chose this one because it revealed something that at first glance was unexpected. I was surprised by the fact that Sunday was so low compared to the other days, so I really dug into this one. It helped me get a better understanding of the data and what it represented, and clarified a gap between perception and reality, and (I think) enables the reader to digest large amounts of information.
+<p>&nbsp;</p>
+<p>&nbsp;</p>
 
+<b>Final Plot 2 -</b> 
+
+```{r Final_Plots_2}
+p1 <- ggplot(aes(x = WDWMINTEMP_MEAN, y = SPOSTMIN), data = mk) +
+  geom_jitter(alpha = 1/20) +
+  ylim(0, quantile(mk$SPOSTMIN, 0.95)) +
+  labs(title = "Relationship of Mean Minimum Temps and Wait Times",
+       x = "Mean Minimum Temp (in degrees F)",
+       y = "Posted Wait Times (in Minutes)") +
+  theme(plot.title = element_text(hjust = 0.5, size = 14))
+
+p2 <- ggplot(aes(x = MONTHOFYEAR, y = WDWMINTEMP_MEAN, color = WDW_TICKET_SEASON), data = mk) +
+  geom_jitter() +
+  scale_x_continuous(breaks = seq(1, 12, 1)) +
+  ylim(45, 80) +
+  labs(title = "Mean Minimum Temps by Month",
+       x = "Month of the Year",
+       y = "Mean Minimum Temp (in degrees F)") +
+  scale_color_manual(name="WDW Ticket Season",
+                       labels=c("Peak","Regular","Value"),
+                       values=c("lightsalmon2","olivedrab3","blue3")) +
+  theme(plot.title = element_text(hjust = 0.5, size = 14))
+
+grid.arrange(p1, p2, ncol = 1)
+```
+
+I chose these two together because, once again, they surprised me. I really had to wrap my head around why wait times would be higher when temperatures were higher. I plotted months vs. temperature just to make sure the data seemed valid and reasonable. It did, but it still didn't make sense with wait times. It wasn't until I added the colors for ticket seasons that it became clear. 
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<b>Final Plot 3 - </b> 
+
+```{r Final_Plots_3}
+ggplot(aes(x = Time_stamp, y = SPOSTMIN), data = mk_no_24) +
+  geom_area(stat = "summary", fun = "mean", aes(group = 1,, fill="Mean")) +
+  geom_area(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), aes(fill="Median", group = 1))  +
+  scale_y_continuous(breaks = seq(0, 55, 5)) +
+  scale_x_continuous(breaks = seq(0, 23, 1)) +
+  labs(title = "Mean & Median Wait Times by Hour of the Day",
+       x = "Time of Day (Midnight (0) to 11:59 p.m. (23))",
+       y = "Posted Wait Times (in Minutes)") +
+  scale_color_manual(labels=c("Mean","Median"),
+                       values=c("red3", "blue3")) +
+  theme(plot.title = element_text(hjust = 0.5, size = 14))
+```
+
+I chose this one because for the rest of this analysis, we'd been looking at daily values, but when it comes to understanding wait times, the intra-day times are just as important. This was my chance to dip my toe in the water that direction--though looking at the hourly data could have certainly been its own analysis project.
+
+
+Before moving onto Reflections, let's look at a data model. Realistically, the correlations are so low within the data we have that this model isn't likely to predict much. I just want to see, based on some of the most promising-seeming criteria, how useful it might be.
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<b>Linear Data Model</b>
 ```{r Building_the_Linear_Model}
 m1 <- lm(I(SPOSTMIN) ~ I(WDW_TICKET_SEASON), data = mk)
 m2 <- update(m1, ~ . + WDWMINTEMP_MEAN)
@@ -449,5 +528,17 @@ m6 <- update(m5, ~ . + IAHOURS)
 mtable(m1, m2, m3, m4, m5, m6)
 ```
 
+As expected, there isn't much here. The r-squared value is only 0.165, which is very weak. Oh well, it was worth looking at.
+
 <p>&nbsp;</p>
 ## Reflection
+
+This was a fun project. As I said at the beginning, this is a data set I've been wanting to analyze for a long time, so this was highly enjoyable in spite of (or sometimes because of) the challenges.
+
+I ran into difficulties in the analysis a few times. One was when I encountered missing data, such as the first few months of 2016 or the missing Epcot park hours. Also, there was some additional investigation I wanted to do but the variables to do so were not included (e.g. mean daily temps).
+
+In conducting the analysis itself, there were some types of visualizations I wanted to do, but didn';'t know how, like plotting max wait times for each part of the day as a bar plot, with the mean, median, 10th percentile, and 90th percentile overlayed as lines. Some of the work took hours trying different combinations and approaches, and twise I had to ask a course mentor for help. 
+
+I am proud of my success, though, in that every type of visualization I wanted to include I eventually learned how to do and was able to include. Also, I don't generally consider myself a very creative person, but I think I was quite successful in coming up with some creative comparisons and analyses. 
+
+The analysis can be enriched in future work by digging more into the patterns and insights from looking at the intra-day times. Also, having the mean daily temperatures, Epcot park hours, and the missing observations could make it even better and more interesting. In fact, since I have so much of this built, I may go back to my friend at TouringPlans.com and see if he has a more updated and complete data set he could share with me so that I can run this analysis on that data, and then possibly take it even farther.
