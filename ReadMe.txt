@@ -4,9 +4,9 @@ This data set was created by TouringPlans.com specifically to give programmers a
 
 A total of four data sets were provided, each consisting of wait time data for one of the four Walt Disney World theme parks (Magic Kingdom, Epcot, Hollywood Studios, and Animal Kingdom) for a particular time period. I have chosen to use the Magic Kingdom ("MK") data set for this project.
 
-To keep the project scope from getting away from me, before importing the set into R, I did some cleaning on it--specifically, I narrowed the date range down to the most recent two complete years for which data was provided (2015 and 2016) and removed some columns that were included but had no data.
+To keep the project scope from getting away from me, before importing the set into RStudio, I did some cleaning on it--specifically, I narrowed the date range down to the most recent two complete years for which data was provided (2015 and 2016) and removed some columns that were included but had no data.
 
-For each data, the standby wait time in minutes ("SPOSTMIN") of some specific attractions in the park (list of attractions was notprovided to me) was recorded several times a day.
+For each data, the standby wait time in minutes ("SPOSTMIN") of some specific attractions in the park (list of attractions was not provided to me) was recorded several times a day.
 
 
 Data Dictionary
