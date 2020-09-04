@@ -1,5 +1,5 @@
 ---
-title: "EDA Project - Randy Crane"
+title: "C751 Project - Walt Disney World Magic Kingdom Wait Times 2015-2016 Data Analysis - Randy Crane"
 output: html_document
 ---
 
@@ -9,13 +9,13 @@ knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
 
 ## Introduction
 
-I have had this data set for about 2 years, and I'm looking forward to finally being able to explore it in this project now that I have these tools. The data set was created by TouringPlans.com specifically to give programmers and statisticians who may be interested in working with them someday some actual data they have compiled to practice on.
+This data set was created by TouringPlans.com specifically to give programmers and statisticians who may be interested in working with them someday some actual data they have compiled to practice on. Initially it was provided to students at the University of Central Florida in 2017. Because a friend of mine is one of the creators of TouringPlans.com, he graciously provided this to me to explore as well.
 
 A total of four data sets were provided, each consisting of wait time data for one of the four Walt Disney World theme parks (Magic Kingdom, Epcot, Hollywood Studios, and Animal Kingdom) for a particular time period. I have chosen to use the Magic Kingdom ("MK") data set for this project.
 
-To keep the project scope from getting away from me, before importing the set into R, I did some cleaning on it--specifically, I narrowed the date range down to the most recent two complete years for which data was provided (2015 and 2016) and removed some columns that were included but had no data.
+To keep the project scope from getting away from me, before importing the set into RStudio, I did some cleaning on it--specifically, I narrowed the date range down to the most recent two complete years for which data was provided (2015 and 2016) and removed some columns that were included but had no data.
 
-For each data, the average weight time in minutes ("SPOSTMIN") of all the attractions in the park was calculated several times a day. Each of these observations is recorded. The purpose of this project is to perform an exploratory data analysis on these wait times to look for possible patterns and to see what factors (e.g. number of hours the park is open, number of hours other parks are open, mean minimum temperature for the day, season, etc.) have a noticeable impact on those wait times. 
+For each data, the standby wait time in minutes ("SPOSTMIN") of some specific attractions in the park (list of attractions was not provided to me) was recorded several times a day. The purpose of this project is to perform an exploratory data analysis on these wait times to look for possible patterns and to see what factors (e.g. number of hours the park is open, number of hours other parks are open, mean minimum temperature for the day, season, etc.) have a noticeable impact on those wait times. 
 
 There are some quirks and limitations to the data set that I wish did not exist. The two primary ones are that, for some reason, Epcot's park hours were not included, and instead of the mean temperature for each day, the mean <i>minimum</i> temperature for each day was provided. I think the mean temperature would be more useful, but the mean minimum is better than nothing.  
 
@@ -51,7 +51,14 @@ This data set consists of 73,222 observations of 24 variables, for a total of 1,
 Not all of these variables are relevant to a summary, so here is the summary with only those that are. These may or may not all end up being useful later in the analysis. 
 
 ```{r summary_of_relevant_numeric_columns}
-cols <- c("SPOSTMIN", "WGT", "MKHOURS", "HSHOURS", "AKHOURS", "IAHOURS", "UFHOURS", "WDWMINTEMP_MEAN");
+cols <- c("SPOSTMIN", 
+          "WGT", 
+          "MKHOURS", 
+          "HSHOURS", 
+          "AKHOURS", 
+          "IAHOURS", 
+          "UFHOURS", 
+          "WDWMINTEMP_MEAN");
 summary(mk[cols])
 ```
 
@@ -106,7 +113,7 @@ ggplot(aes(x = WDW_TICKET_SEASON, y = SPOSTMIN), data = mk) +
 
 There are a couple of things I notice right away about these box plots. First, as expected, the mean wait times are longest during peak season and decrease from there. Somewhat surprisingly, peak season has a lot of outliers, but considering that "peak season" dates include Spring Breaks, Summer, Christmas, and other holidays, I expect a lot of variability in that one. The outliers in regular season may warrant more scrutiny. We may be able to see this with a scatterplot of wait times vs. month of the year.
 
-```{r Visualization4_Scatterplot_of_wait_times_vs_month_of_the_year_with_jitter.}
+```{r Visualization4_Scatterplot_wait_times_vs_month_of_the_year_with_jitter.}
 ggplot(aes(x=(MONTHOFYEAR),y=SPOSTMIN, color = WDW_TICKET_SEASON), data=mk) +
   geom_jitter(alpha = 1/4) +
   scale_x_continuous(breaks = seq(1, 12, 1))
@@ -117,7 +124,14 @@ Sure enough, the season varies from month to month for much of the year. Only Ju
 ```{r Visualization5_Scatterplot_by_day_of_week_with_jitter}
 ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, color = WDW_TICKET_SEASON), data=mk) +
   geom_jitter(alpha = 1/4) +
-  scale_x_continuous(breaks = seq(1, 7, 1), labels=c("1" = "Sunday", "2" = "Monday", "3" = "Tuesday", "4" = "Wednesday", "5" = "Thursday", "6" = "Friday", "7" = "Saturday"))
+  scale_x_continuous(breaks = seq(1, 7, 1), 
+                     labels=c("1" = "Sunday", 
+                              "2" = "Monday", 
+                              "3" = "Tuesday", 
+                              "4" = "Wednesday", 
+                              "5" = "Thursday", 
+                              "6" = "Friday", 
+                              "7" = "Saturday"))
 ```
 
 This time, we are looking at the wait times by day of the week, again color-coded by ticket season. These findings definitely surprise me. I would expect both weekend days to be the busiest, but Sunday is noticeably lower than the other days. Let's take a look at the summary for each day to find out more.
@@ -152,24 +166,48 @@ That makes Sunday the arrival/departure day for a larger-than-average percentage
 I would like to explore this further. Let's see if the daily attendance pattern holds across ticket seasons.
 
 ```{r Visualization8_box_plots_for_DAYOFWEEK}
-p1 <- ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, group = DAYOFWEEK), data = subset(mk, WDW_TICKET_SEASON == "peak")) +
+p1 <- ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, group = DAYOFWEEK), 
+             data = subset(mk, WDW_TICKET_SEASON == "peak")) +
   geom_boxplot(color = "red") +
   ylim(0, quantile(mk$SPOSTMIN, 0.95)) +
-  scale_x_continuous(breaks = seq(1, 7, 1), labels=c("1" = "Sunday", "2" = "Monday", "3" = "Tuesday", "4" = "Wednesday", "5" = "Thursday", "6" = "Friday", "7" = "Saturday")) +
+  scale_x_continuous(breaks = seq(1, 7, 1), 
+                     labels=c("1" = "Sunday", 
+                              "2" = "Monday", 
+                              "3" = "Tuesday", 
+                              "4" = "Wednesday", 
+                              "5" = "Thursday", 
+                              "6" = "Friday", 
+                              "7" = "Saturday")) +
   xlab("DAYOFWEEK - Peak Season") +
   stat_summary(fun = mean, geom = "point", shape = 4)
 
-p2 <- ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, group = DAYOFWEEK), data = subset(mk, WDW_TICKET_SEASON == "regular")) +
+p2 <- ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, group = DAYOFWEEK), 
+             data = subset(mk, WDW_TICKET_SEASON == "regular")) +
   geom_boxplot(color = "green") +
   ylim(0, quantile(mk$SPOSTMIN, 0.95)) +
- scale_x_continuous(breaks = seq(1, 7, 1), labels=c("1" = "Sunday", "2" = "Monday", "3" = "Tuesday", "4" = "Wednesday", "5" = "Thursday", "6" = "Friday", "7" = "Saturday")) +
+ scale_x_continuous(breaks = seq(1, 7, 1), 
+                    labels=c("1" = "Sunday", 
+                             "2" = "Monday", 
+                             "3" = "Tuesday", 
+                             "4" = "Wednesday", 
+                             "5" = "Thursday", 
+                             "6" = "Friday", 
+                             "7" = "Saturday")) +
   xlab("DAYOFWEEK - Regular Season") +
   stat_summary(fun = mean, geom = "point", shape = 4)
 
-p3 <- ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, group = DAYOFWEEK), data = subset(mk, WDW_TICKET_SEASON == "value")) +
+p3 <- ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, group = DAYOFWEEK), 
+             data = subset(mk, WDW_TICKET_SEASON == "value")) +
   geom_boxplot(color = "blue") +
   ylim(0, quantile(mk$SPOSTMIN, 0.95)) +
-  scale_x_continuous(breaks = seq(1, 7, 1), labels=c("1" = "Sunday", "2" = "Monday", "3" = "Tuesday", "4" = "Wednesday", "5" = "Thursday", "6" = "Friday", "7" = "Saturday")) +
+  scale_x_continuous(breaks = seq(1, 7, 1), 
+                     labels=c("1" = "Sunday", 
+                              "2" = "Monday", 
+                              "3" = "Tuesday", 
+                              "4" = "Wednesday", 
+                              "5" = "Thursday", 
+                              "6" = "Friday", 
+                              "7" = "Saturday")) +
   xlab("DAYOFWEEK - Value Season") +
   stat_summary(fun = mean, geom = "point", shape = 4)
 
@@ -207,7 +245,8 @@ Well, that doesn't look right. Assuming WDWMINTEMP_MEAN is what it sounds like i
 Let's validate this data by comparing the WDWMINTEMP_MEAN to the month of the year to see which months are the highest minimum temperatures. 
 
 ```{r Visualization10_comparing_temperatures_to_months}
-ggplot(aes(x = MONTHOFYEAR, y = WDWMINTEMP_MEAN, color = WDW_TICKET_SEASON), data = mk) +
+ggplot(aes(x = MONTHOFYEAR, y = WDWMINTEMP_MEAN, color = WDW_TICKET_SEASON), 
+       data = mk) +
   geom_jitter() +
   scale_x_continuous(breaks = seq(1, 12, 1)) +
   ylim(45, 80)
@@ -282,8 +321,11 @@ So far, we've been looking at the park as a whole. What if we explore wait times
 ```{r Visualization15_by_newness}
 ggplot(aes(x= NEWNESS, y = SPOSTMIN), data = mk) +
   geom_point(alpha = 1/5, position = position_jitter(h = 0)) +
-  geom_line(stat = "summary", fun = "mean", aes(color = "Mean", group = 1), size = 2) +
-  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), aes(color = "Median", group = 1), size = 2)  +
+  geom_line(stat = "summary", fun = "mean", 
+            aes(color = "Mean", group = 1), size = 2) +
+  geom_line(stat = "summary", fun = quantile, 
+            fun.args = list(probs = 0.5), 
+            aes(color = "Median", group = 1), size = 2)  +
   xlab("Refurbishments") +
   scale_x_discrete(breaks = c("MAJOR REFURB WITHIN 18 MONTHS", 
                               "MINOR REFURB WITHIN 18 MONTHS", 
@@ -295,7 +337,8 @@ ggplot(aes(x= NEWNESS, y = SPOSTMIN), data = mk) +
                               "Minor w/in 30 days", 
                               "Minor w/in 6 months", 
                               "Minor w/in 7 days")) +
-  scale_color_manual("Statistics", values = c("Mean" = "Red", "Median" = "Blue"))
+  scale_color_manual("Statistics", 
+                     values = c("Mean" = "Red", "Median" = "Blue"))
 ```
 
 This plot shows the same general trend for both the mean and median--the longest  wait times are for attractions having a minor refurbishment within 6 months. The only reason I can think of for this is that the attractions with minor refurbishments within 6 months are also the "headliners" and/or guest favorites and so they naturally generate higher wait times. Without a list of what attractions are in each category, though, I can't say this for certain.  
@@ -325,10 +368,13 @@ May 22, 2015. That makes sense. That was the date of <a href="https://touringpla
 mk_no_24 <- subset(mk, MKHOURS != 23)
 
 #Replot the hours vs. wait times.
-ggplot(aes(x = MKHOURS, y = SPOSTMIN, color = WDW_TICKET_SEASON), data = mk_no_24) +
+ggplot(aes(x = MKHOURS, y = SPOSTMIN, color = WDW_TICKET_SEASON), 
+       data = mk_no_24) +
   geom_jitter(alpha = 0.25) +
-  geom_line(stat = "summary", fun = "mean", aes(color = "Mean", group = 1), size = 2) +
-  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), aes(color = "Median", group = 1), size = 2) +
+  geom_line(stat = "summary", fun = "mean", 
+            aes(color = "Mean", group = 1), size = 2) +
+  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), 
+            aes(color = "Median", group = 1), size = 2) +
   scale_x_continuous(breaks = seq(8, 18, 1))
 ```
 
@@ -341,32 +387,42 @@ Do wait times at any of the other parks (excluding Epcot) affect Magic Kingdom w
 ```{r Visualization18_Compare_to_total_opening_hours_for_each_park}
 p1 <- ggplot(aes(x = MKHOURS, y = SPOSTMIN), data = mk_no_24) +
   geom_jitter(alpha = 0.1) +
-  geom_line(stat = "summary", fun = "mean", aes(color = "Mean", group = 1), size = 2) +
-  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), aes(color = "Median", group = 1), size = 2)  +
+  geom_line(stat = "summary", fun = "mean", 
+            aes(color = "Mean", group = 1), size = 2) +
+  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), 
+            aes(color = "Median", group = 1), size = 2)  +
   scale_x_continuous(breaks = seq(8, 18, 1))
 
 p2 <- ggplot(aes(x = AKHOURS, y = SPOSTMIN), data = mk) +
   geom_jitter(alpha = 0.1) +
-  geom_line(stat = "summary", fun = "mean", aes(color = "Mean", group = 1), size = 2) +
-  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), aes(color = "Median", group = 1), size = 2)  +
+  geom_line(stat = "summary", fun = "mean", 
+            aes(color = "Mean", group = 1), size = 2) +
+  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), 
+            aes(color = "Median", group = 1), size = 2)  +
   scale_x_continuous(breaks = seq(8, 18, 1))
 
 p3 <- ggplot(aes(x = HSHOURS, y = SPOSTMIN), data = mk) +
   geom_jitter(alpha = 0.1) +
-  geom_line(stat = "summary", fun = "mean", aes(color = "Mean", group = 1), size = 2) +
-  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), aes(color = "Median", group = 1), size = 2)  +
+  geom_line(stat = "summary", fun = "mean", 
+            aes(color = "Mean", group = 1), size = 2) +
+  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), 
+            aes(color = "Median", group = 1), size = 2)  +
   scale_x_continuous(breaks = seq(8, 18, 1))
 
 p4 <- ggplot(aes(x = UFHOURS, y = SPOSTMIN), data = mk) +
   geom_jitter(alpha = 0.1) +
-  geom_line(stat = "summary", fun = "mean", aes(color = "Mean", group = 1), size = 2) +
-  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), aes(color = "Median", group = 1), size = 2)  +
+  geom_line(stat = "summary", fun = "mean", 
+            aes(color = "Mean", group = 1), size = 2) +
+  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), 
+            aes(color = "Median", group = 1), size = 2)  +
   scale_x_continuous(breaks = seq(8, 18, 1))
 
 p5 <- ggplot(aes(x = IAHOURS, y = SPOSTMIN), data = mk) +
   geom_jitter(alpha = 0.1) +
-  geom_line(stat = "summary", fun = "mean", aes(color = "Mean", group = 1), size = 2) +
-  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), aes(color = "Median", group = 1), size = 2)  +
+  geom_line(stat = "summary", fun = "mean", 
+            aes(color = "Mean", group = 1), size = 2) +
+  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), 
+            aes(color = "Median", group = 1), size = 2)  +
   scale_x_continuous(breaks = seq(8, 18, 1))
 
 grid.arrange(p1, p2, p3, p4, p5, ncol = 3)
@@ -390,22 +446,39 @@ Another aspect we've not yet explored is the intra-day wait times. So far, we've
 
 ```{r Visualization20_wait_times_by_time_of_day}
 #New variable for hour from TIMEPART.
-mk$TIMEPART.date <- format(strptime(mk$TIMEPART, format = "%I:%M:%S %p"), "%H:%M:%S")
-mk$Time_stamp <- as.numeric(format(strptime(mk$TIMEPART.date,"%H:%M:%S"),'%H'))
+mk$TIMEPART.date <- format(strptime(mk$TIMEPART, 
+                                    format = "%I:%M:%S %p"), "%H:%M:%S")
+mk$Time_stamp <- as.numeric(format
+                            (strptime(mk$TIMEPART.date,"%H:%M:%S"),'%H'))
 
 #Create time_of_day variable for hourly analysis and order more logically.
 mk$time_of_day <- cut(mk$Time_stamp, breaks = c(0, 5, 8, 11, 14, 17, 19, 24),
-      labels = c("Post-Midnight", "Early Morning", "Late Morning", "Early Afternoon", "Late Afternoon", "Evening", "Night"),
+      labels = c("Post-Midnight", 
+                 "Early Morning", 
+                 "Late Morning", 
+                 "Early Afternoon", 
+                 "Late Afternoon", 
+                 "Evening", 
+                 "Night"),
       include.lowest = TRUE)
-mk$time_of_day <- factor(mk$time_of_day, levels = c("Early Morning", "Late Morning", "Early Afternoon", "Late Afternoon", "Evening", "Night", "Post-Midnight"))
+mk$time_of_day <- factor(mk$time_of_day, levels = c("Early Morning", 
+                                                    "Late Morning", 
+                                                    "Early Afternoon", 
+                                                    "Late Afternoon", 
+                                                    "Evening", "Night", 
+                                                    "Post-Midnight"))
 
 #Let's plot it now.
 ggplot(aes(x = time_of_day, y = SPOSTMIN), data = mk) +
   geom_bar(stat = "summary", fun = "max", fill = "blue") +
-  geom_line (stat = "summary", fun = "mean", aes(group = 1, color = "Mean"), size = 2) +
-  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), aes(color = "Median", group = 1), size = 2)  +
-  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.95), aes(color = "95th Percentile", group = 1), size = 2) +
-  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.1), aes(color = "10th Percentile", group = 1), size = 2)  +
+  geom_line (stat = "summary", fun = "mean", 
+             aes(group = 1, color = "Mean"), size = 2) +
+  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.5), 
+            aes(color = "Median", group = 1), size = 2)  +
+  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.95), 
+            aes(color = "95th Percentile", group = 1), size = 2) +
+  geom_line(stat = "summary", fun = quantile, fun.args = list(probs = 0.1), 
+            aes(color = "10th Percentile", group = 1), size = 2)  +
   scale_y_continuous()
 
 ```
@@ -450,7 +523,13 @@ The lesson here is that if you're planning to visit the Magic Kingdom, get there
 ```{r Final_Plots_1}
 ggplot(aes(x = DAYOFWEEK, y = SPOSTMIN, color = WDW_TICKET_SEASON), data=mk) +
   geom_jitter(alpha = 1/4) +
-  scale_x_continuous(breaks = seq(1, 7, 1), labels=c("1" = "Sunday", "2" = "Monday", "3" = "Tuesday", "4" = "Wednesday", "5" = "Thursday", "6" = "Friday", "7" = "Saturday")) +
+  scale_x_continuous(breaks = seq(1, 7, 1), labels=c("1" = "Sunday", 
+                                                     "2" = "Monday", 
+                                                     "3" = "Tuesday", 
+                                                     "4" = "Wednesday", 
+                                                     "5" = "Thursday", 
+                                                     "6" = "Friday", 
+                                                     "7" = "Saturday")) +
   labs(title = "Wait Times by Day of the Week",
        x = "Day of the Week",
        y = "Posted Wait Times (in Minutes)") +
@@ -475,7 +554,8 @@ p1 <- ggplot(aes(x = WDWMINTEMP_MEAN, y = SPOSTMIN), data = mk) +
        y = "Posted Wait Times (in Minutes)") +
   theme(plot.title = element_text(hjust = 0.5, size = 14))
 
-p2 <- ggplot(aes(x = MONTHOFYEAR, y = WDWMINTEMP_MEAN, color = WDW_TICKET_SEASON), data = mk) +
+p2 <- ggplot(aes(x = MONTHOFYEAR, y = WDWMINTEMP_MEAN, 
+                 color = WDW_TICKET_SEASON), data = mk) +
   geom_jitter() +
   scale_x_continuous(breaks = seq(1, 12, 1)) +
   ylim(45, 80) +
