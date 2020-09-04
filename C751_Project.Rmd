@@ -1,10 +1,17 @@
 ---
 title: "C751 Project - Walt Disney World Magic Kingdom Wait Times 2015-2016 Data Analysis - Randy Crane"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    theme: united
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
+knitr::opts_chunk$set(fig.width = 9, fig.height = 5, fig.path = 'Figs',
+                      fig.align = 'center', tidy = 'true',
+                      echo = FALSE, message=FALSE, warning=FALSE)
 ```
 
 ## Introduction
@@ -39,6 +46,7 @@ library(gridExtra)
 library(RColorBrewer)
 library(scales)
 library(tidyr)
+
 
 str(mk)
 ```
